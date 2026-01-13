@@ -6,31 +6,29 @@ const app = express()
 const PORT = process.env.PORT || 3000
 
 app.get("/", (req, res) => {
-  res.send("✅ yt-dlp MP3 API is running")
+  res.send("✅ yt-dlp Audio API is running")
 })
 
-app.get("/mp3", (req, res) => {
+/**
+ * ✅ FAST & STABLE (M4A)
+ * Heroku timeout se safe
+ * WhatsApp supported
+ */
+app.get("/audio", (req, res) => {
   const url = req.query.url
   if (!url) return res.status(400).json({ error: "No url provided" })
 
-  const forceDownload = req.query.dl === "1"
-
-  res.setHeader("Content-Type", "audio/mpeg")
+  res.setHeader("Content-Type", "audio/mp4")
   res.setHeader(
     "Content-Disposition",
-    forceDownload
-      ? "attachment; filename=song.mp3"
-      : "inline; filename=song.mp3"
+    "attachment; filename=audio.m4a"
   )
 
   const ytDlpPath = path.join(__dirname, "bin", "yt-dlp")
 
   const yt = spawn("bash", [
     ytDlpPath,
-    "-f", "bestaudio/best",
-    "-x",
-    "--audio-format", "mp3",
-    "--audio-quality", "0",
+    "-f", "bestaudio[ext=m4a]/bestaudio",
     "--no-playlist",
     "--no-progress",
     "-o", "-",
