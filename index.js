@@ -11,16 +11,18 @@ app.get("/", (req, res) => {
 
 app.get("/mp3", (req, res) => {
   const url = req.query.url
-  if (!url) {
-    return res.status(400).json({ error: "No url provided" })
-  }
+  if (!url) return res.status(400).json({ error: "No url provided" })
 
-  // MP3 headers
+  const forceDownload = req.query.dl === "1"
+
   res.setHeader("Content-Type", "audio/mpeg")
-  res.setHeader("Content-Disposition", "inline; filename=song.mp3")
-  res.setHeader("Transfer-Encoding", "chunked")
+  res.setHeader(
+    "Content-Disposition",
+    forceDownload
+      ? "attachment; filename=song.mp3"
+      : "inline; filename=song.mp3"
+  )
 
-  // yt-dlp wrapper (repo ke andar)
   const ytDlpPath = path.join(__dirname, "bin", "yt-dlp")
 
   const yt = spawn("bash", [
@@ -30,29 +32,23 @@ app.get("/mp3", (req, res) => {
     "--audio-format", "mp3",
     "--audio-quality", "0",
     "--no-playlist",
+    "--no-progress",
     "-o", "-",
     url
   ])
 
   yt.stdout.pipe(res)
 
-  yt.stderr.on("data", data => {
-    console.error("yt-dlp stderr:", data.toString())
+  yt.stderr.on("data", d => {
+    console.error("yt-dlp:", d.toString())
   })
 
   yt.on("error", err => {
-    console.error("yt-dlp spawn error:", err)
-    if (!res.headersSent) {
-      res.status(500).end("yt-dlp failed")
-    }
+    console.error("spawn error:", err)
+    if (!res.headersSent) res.status(500).end("yt-dlp error")
   })
 
-  yt.on("close", code => {
-    if (code !== 0) {
-      console.error("yt-dlp exited with code", code)
-    }
-    res.end()
-  })
+  yt.on("close", () => res.end())
 })
 
 app.listen(PORT, () => {
