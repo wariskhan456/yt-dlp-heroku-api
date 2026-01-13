@@ -11,19 +11,25 @@ app.get("/", (req, res) => {
 
 app.get("/mp3", (req, res) => {
   const url = req.query.url
-  if (!url) return res.status(400).json({ error: "No url provided" })
+  if (!url) {
+    return res.status(400).json({ error: "No url provided" })
+  }
 
+  // MP3 headers
   res.setHeader("Content-Type", "audio/mpeg")
   res.setHeader("Content-Disposition", "inline; filename=song.mp3")
+  res.setHeader("Transfer-Encoding", "chunked")
 
-  // 👉 yt-dlp wrapper path (repo ke andar)
+  // yt-dlp wrapper (repo ke andar)
   const ytDlpPath = path.join(__dirname, "bin", "yt-dlp")
 
   const yt = spawn("bash", [
     ytDlpPath,
-    "-f", "bestaudio",
+    "-f", "bestaudio/best",
     "-x",
     "--audio-format", "mp3",
+    "--audio-quality", "0",
+    "--no-playlist",
     "-o", "-",
     url
   ])
@@ -37,7 +43,7 @@ app.get("/mp3", (req, res) => {
   yt.on("error", err => {
     console.error("yt-dlp spawn error:", err)
     if (!res.headersSent) {
-      res.status(500).end("yt-dlp failed to start")
+      res.status(500).end("yt-dlp failed")
     }
   })
 
