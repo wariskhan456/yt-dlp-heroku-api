@@ -15,13 +15,13 @@ app.get("/mp3", (req, res) => {
   res.setHeader("Content-Type", "audio/mpeg")
   res.setHeader("Content-Disposition", "inline; filename=song.mp3")
 
-  const yt = spawn("yt-dlp", [
-    "-f", "bestaudio",
-    "-x",
-    "--audio-format", "mp3",
-    "-o", "-",
-    url
-  ])
+  const yt = spawn("/app/bin/yt-dlp", [
+  "-f", "bestaudio",
+  "-x",
+  "--audio-format", "mp3",
+  "-o", "-",
+  url
+])
 
   yt.stdout.pipe(res)
 
