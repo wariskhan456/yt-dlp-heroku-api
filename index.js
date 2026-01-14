@@ -25,8 +25,8 @@ app.get("/mp3", (req, res) => {
   const id = Date.now();
   const out = `/tmp/${id}.mp3`;
 
-  // ⚠️ SIMPLE & SAFE COMMAND (NO EXTRA FLAGS)
-  const cmd = `yt-dlp -x --audio-format mp3 --no-playlist -o "${out}" "${url}"`;
+  // ✅ IMPORTANT FIX: --js-runtime=node
+  const cmd = `yt-dlp -x --audio-format mp3 --no-playlist --js-runtime=node -o "${out}" "${url}"`;
 
   exec(cmd, { timeout: 180000 }, (err, stdout, stderr) => {
     if (err) {
@@ -34,7 +34,7 @@ app.get("/mp3", (req, res) => {
       return res.status(500).json({
         status: false,
         message: "yt-dlp failed",
-        error: stderr?.toString().slice(0, 300)
+        error: stderr.toString().slice(0, 400)
       });
     }
 
