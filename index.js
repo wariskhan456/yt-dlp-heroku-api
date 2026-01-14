@@ -11,31 +11,39 @@ app.get("/", (req, res) => {
 });
 
 app.get("/mp3", async (req, res) => {
-  try {
-    const url = req.query.url;
-    if (!url)
-      return res.status(400).json({ status: false, error: "URL required" });
-
-    const output = path.join(__dirname, `audio_${Date.now()}.mp3`);
-
-    const command = `yt-dlp -x --audio-format mp3 --audio-quality 0 -o "${output}" "${url}"`;
-
-    exec(command, async (err) => {
-      if (err || !fs.existsSync(output)) {
-        console.error("yt-dlp error:", err);
-        return res.status(500).json({ status: false, error: "Download failed" });
-      }
-
-      res.sendFile(output, () => {
-        fs.unlinkSync(output);
-      });
-    });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ status: false, error: "Server error" });
+  const url = req.query.url;
+  if (!url) {
+    return res.status(400).json({ status: false, error: "URL required" });
   }
+
+  const filename = `audio_${Date.now()}.mp3`;
+  const output = path.join(__dirname, filename);
+
+  const cmd = `
+yt-dlp -f bestaudio/best \
+--extract-audio \
+--audio-format mp3 \
+--audio-quality 0 \
+--no-playlist \
+--user-agent "Mozilla/5.0" \
+-o "${output}" \
+"${url}"
+`;
+
+  exec(cmd, { maxBuffer: 1024 * 1024 * 50 }, (err) => {
+    if (err || !fs.existsSync(output)) {
+      console.error("YT-DLP ERROR:", err);
+      return res
+        .status(500)
+        .json({ status: false, error: "Download failed" });
+    }
+
+    res.sendFile(output, () => {
+      fs.unlinkSync(output);
+    });
+  });
 });
 
 app.listen(PORT, () => {
-  console.log(`YT-DLP MP3 API running on port ${PORT}`);
+  console.log("YT-DLP MP3 API running on port", PORT);
 });
